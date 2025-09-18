@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,11 +12,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/auth-context';
-import { Briefcase, LogOut, User } from 'lucide-react';
+import { Briefcase, LogOut, User, Plus, Building } from 'lucide-react';
 import Link from 'next/link';
+import { AddJobModal } from '@/components/modals/add-job-modal';
 
 export function Header() {
   const { user, logout } = useAuth();
+  const [addJobModalOpen, setAddJobModalOpen] = useState(false);
 
   // Helper function to get user initials
   const getUserInitials = (firstName?: string, lastName?: string) => {
@@ -61,9 +64,24 @@ export function Header() {
           >
             Companies
           </Link>
+          
+          {/* Add Job button for Employers - visible in navigation */}
+          {user?.role === 'employer' && (
+            <Button size="sm" onClick={() => setAddJobModalOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Job
+            </Button>
+          )}
         </nav>
 
         <div className="flex items-center space-x-4">
+          {/* Add Job button for mobile - only for employers */}
+          {user?.role === 'employer' && (
+            <Button size="sm" className="md:hidden" onClick={() => setAddJobModalOpen(true)}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+
           <ThemeToggle />
 
           {user ? (
@@ -104,15 +122,39 @@ export function Header() {
                 
                 <DropdownMenuSeparator />
                 
-                {/* Navigation Items */}
-                {/* <DropdownMenuItem asChild>
-                  <Link
-                    href={user.role === 'seeker' ? '/' : '/profile'}
-                    className="flex items-center"
-                  >
-                  </Link>
-                </DropdownMenuItem> */}
+                {/* Role-specific Navigation Items */}
+                {user.role === 'employer' && (
+                  <>
+                    <DropdownMenuItem onClick={() => setAddJobModalOpen(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Job
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/employer/dashboard"
+                        className="flex items-center"
+                      >
+                        <Briefcase className="mr-2 h-4 w-4" />
+                        My Jobs
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link
+                        href="/employer/company"
+                        className="flex items-center"
+                      >
+                        <Building className="mr-2 h-4 w-4" />
+                        Company Profile
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 
+                {/* Common Navigation Items */}
                 <DropdownMenuItem asChild>
                   <Link
                     href="/profile"
@@ -147,6 +189,12 @@ export function Header() {
           )}
         </div>
       </div>
+
+      {/* Add Job Modal */}
+      <AddJobModal 
+        open={addJobModalOpen} 
+        onClose={() => setAddJobModalOpen(false)} 
+      />
     </header>
   );
 }
