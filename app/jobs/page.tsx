@@ -13,6 +13,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { JobFilters, jobsApi } from '@/lib/api/jobs';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -28,8 +35,8 @@ import {
   Loader2,
   MapPin,
   Search,
+  X,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -38,6 +45,8 @@ export default function JobsPage() {
   const searchParams = useSearchParams();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [modalOpen, setModalOpen] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -159,16 +168,155 @@ export default function JobsPage() {
   };
 
   const formatSalary = (salary: any) => {
+    if (!salary) return 'Salary not specified';
     const formatter = new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: salary.currency,
+      currency: salary.currency || 'USD',
       maximumFractionDigits: 0,
     });
     return `${formatter.format(salary.min)} - ${formatter.format(salary.max)}`;
   };
 
+  // Handle job click to open modal
+  const handleJobClick = (job: any) => {
+    setSelectedJob(job);
+    setModalOpen(true);
+  };
+
+  // Simple Job Details Modal Component
+  const JobDetailsModal = ({ job, open, onClose }: { job: any; open: boolean; onClose: () => void }) => (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center border">
+              {job?.companyLogo ? (
+                <img
+                  src={job.companyLogo}
+                  alt={`${job.company} logo`}
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
+              ) : (
+                <Building className="h-8 w-8 text-primary" />
+              )}
+            </div>
+            <div className="flex-1">
+              <DialogTitle className="text-2xl font-bold mb-2">{job?.title}</DialogTitle>
+              <DialogDescription className="text-lg">
+                {job?.company} • {job?.location}
+              </DialogDescription>
+            </div>
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-6 mt-6">
+          {/* Job Badges */}
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {job?.location}
+            </Badge>
+            <Badge variant="outline">
+              {jobTypes.find((t) => t.value === job?.type)?.label}
+            </Badge>
+            {job?.category === 'non-skilled' && job?.trainingProvided && (
+              <Badge
+                variant="outline"
+                className="text-emerald-600 border-emerald-600 flex items-center gap-1"
+              >
+                <GraduationCap className="h-3 w-3" />
+                Training Provided
+              </Badge>
+            )}
+            {job?.category === 'deferred-hire' && job?.deferredStartMonths && (
+              <Badge
+                variant="outline"
+                className="text-blue-600 border-blue-600 flex items-center gap-1"
+              >
+                <Calendar className="h-3 w-3" />
+                Starts in {job.deferredStartMonths} months
+              </Badge>
+            )}
+            {job?.isRemote && (
+              <Badge
+                variant="outline"
+                className="text-green-600 border-green-600"
+              >
+                Remote
+              </Badge>
+            )}
+          </div>
+
+          {/* Salary */}
+          <div className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-green-600" />
+            <span className="text-lg font-semibold text-green-600">
+              {formatSalary(job?.salary)}
+            </span>
+          </div>
+
+          {/* Posted Date */}
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>
+              Posted {job?.postedAt ? formatDistanceToNow(new Date(job.postedAt), { addSuffix: true }) : 'recently'}
+            </span>
+          </div>
+
+          {/* Job Description */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Job Description</h3>
+            <div className="text-muted-foreground whitespace-pre-line">
+              {job?.description || 'No description available.'}
+            </div>
+          </div>
+
+          {/* Requirements */}
+          {job?.requirements && job.requirements.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Requirements</h3>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                {job.requirements.map((req: string, index: number) => (
+                  <li key={index}>{req}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Benefits */}
+          {job?.benefits && job.benefits.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold mb-3">Benefits</h3>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                {job.benefits.map((benefit: string, index: number) => (
+                  <li key={index}>{benefit}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Apply Button */}
+          <div className="flex gap-4 pt-4">
+            <Button size="lg" className="flex-1">
+              Apply Now
+            </Button>
+            <Button variant="outline" size="lg">
+              Save Job
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   const JobCard = ({ job }: { job: any }) => (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+    <Card
+      className="hover:shadow-md transition-shadow cursor-pointer group"
+      onClick={() => handleJobClick(job)}
+    >
       <CardContent className="p-6">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center border">
@@ -186,11 +334,9 @@ export default function JobsPage() {
           <div className="flex-1 space-y-3">
             <div className="flex items-start justify-between">
               <div>
-                <Link href={`/jobs/${job.id}`}>
-                  <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                    {job.title}
-                  </h3>
-                </Link>
+                <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                  {job.title}
+                </h3>
                 <p className="text-muted-foreground flex items-center gap-1">
                   <Building className="h-4 w-4" />
                   {job.company}
@@ -472,7 +618,7 @@ export default function JobsPage() {
             <div className="lg:col-span-3">
               <div className="flex items-center justify-between mb-6">
                 <p className="text-muted-foreground">
-                  {loading ? 'Loading...' : `Showing ${pagination.total} Jobs`}
+                  {loading ? 'Loading...' : `Showing ${pagination.total} jobs`}
                 </p>
                 <Select
                   value={filters.sortBy || 'newest'}
@@ -534,6 +680,16 @@ export default function JobsPage() {
       </main>
 
       <Footer />
+
+      {/* Job Details Modal */}
+      <JobDetailsModal
+        job={selectedJob}
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedJob(null);
+        }}
+      />
     </div>
   );
 }
