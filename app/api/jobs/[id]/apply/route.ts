@@ -1,7 +1,8 @@
+// app/api/jobs/[id]/apply/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
-import { Job } from '@/lib/models/Job';
 import { Application } from '@/lib/models/Application';
+import { Job } from '@/lib/models/Job';
 import { authenticateRequest } from '@/lib/auth';
 
 export async function POST(
@@ -9,73 +10,61 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB();
-    
     const auth = await authenticateRequest(request);
     if (!auth || auth.role !== 'seeker') {
       return NextResponse.json(
-        { success: false, message: 'Job seeker authentication required' },
+        { message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
+    await connectDB();
+    
     const job = await Job.findById(params.id);
     if (!job) {
       return NextResponse.json(
-        { success: false, message: 'Job not found' },
+        { message: 'Job not found' },
         { status: 404 }
-      );
-    }
-
-    if (job.status !== 'active') {
-      return NextResponse.json(
-        { success: false, message: 'This job is no longer accepting applications' },
-        { status: 400 }
       );
     }
 
     // Check if already applied
     const existingApplication = await Application.findOne({
       jobId: params.id,
-      seekerId: auth.userId
+      applicantId: auth.userId,
     });
 
     if (existingApplication) {
       return NextResponse.json(
-        { success: false, message: 'You have already applied to this job' },
+        { message: 'You have already applied for this job' },
         { status: 400 }
       );
     }
 
-    const body = await request.json();
-    
+    // Create application
     const application = new Application({
       jobId: params.id,
-      seekerId: auth.userId,
-      employerId: job.employerId,
-      coverLetter: body.coverLetter,
-      statusHistory: [{
-        status: 'pending',
-        updatedAt: new Date(),
-        updatedBy: auth.userId
-      }]
+      applicantId: auth.userId,
+      status: 'pending',
+      appliedAt: new Date(),
     });
 
     await application.save();
 
-    // Update job applications count
-    job.applicationsCount += 1;
-    await job.save();
+    // Increment application count
+    await Job.findByIdAndUpdate(params.id, {
+      $inc: { applicationsCount: 1 }
+    });
 
     return NextResponse.json({
-      success: true,
       message: 'Application submitted successfully',
-      data: application,
+      applicationId: application._id,
     });
+
   } catch (error) {
-    console.error('Application error:', error);
+    console.error('Apply job error:', error);
     return NextResponse.json(
-      { success: false, message: 'Server error' },
+      { message: 'Failed to submit application' },
       { status: 500 }
     );
   }

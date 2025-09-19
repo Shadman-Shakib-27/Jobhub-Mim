@@ -10,7 +10,6 @@ import { jobsApi } from '@/lib/api/jobs';
 import { formatDistanceToNow } from 'date-fns';
 import {
   ArrowLeft,
-  Bookmark,
   Building,
   Calendar,
   Clock,
@@ -32,7 +31,7 @@ export default function JobDetailPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params?.id as string;
-  
+
   const [job, setJob] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [applying, setApplying] = useState(false);
@@ -41,7 +40,7 @@ export default function JobDetailPage() {
   // Load job details
   const loadJobDetails = async () => {
     if (!jobId) return;
-    
+
     try {
       setLoading(true);
       const jobData = await jobsApi.getJobById(jobId);
@@ -118,8 +117,8 @@ export default function JobDetailPage() {
     const types: { [key: string]: string } = {
       'full-time': 'Full Time',
       'part-time': 'Part Time',
-      'contract': 'Contract',
-      'internship': 'Internship',
+      contract: 'Contract',
+      internship: 'Internship',
     };
     return types[type] || type;
   };
@@ -216,7 +215,10 @@ export default function JobDetailPage() {
                       </p>
 
                       <div className="flex flex-wrap gap-2 mb-4">
-                        <Badge variant="secondary" className="flex items-center gap-1">
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1"
+                        >
                           <MapPin className="h-3 w-3" />
                           {job.location}
                         </Badge>
@@ -224,34 +226,42 @@ export default function JobDetailPage() {
                           {getJobTypeLabel(job.type)}
                         </Badge>
                         {job.isRemote && (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
+                          <Badge
+                            variant="outline"
+                            className="text-green-600 border-green-600"
+                          >
                             Remote
                           </Badge>
                         )}
-                        {job.category === 'non-skilled' && job.trainingProvided && (
-                          <Badge
-                            variant="outline"
-                            className="text-emerald-600 border-emerald-600 flex items-center gap-1"
-                          >
-                            <GraduationCap className="h-3 w-3" />
-                            Training Provided
-                          </Badge>
-                        )}
-                        {job.category === 'deferred-hire' && job.deferredStartMonths && (
-                          <Badge
-                            variant="outline"
-                            className="text-blue-600 border-blue-600 flex items-center gap-1"
-                          >
-                            <Calendar className="h-3 w-3" />
-                            Starts in {job.deferredStartMonths} months
-                          </Badge>
-                        )}
+                        {job.category === 'non-skilled' &&
+                          job.trainingProvided && (
+                            <Badge
+                              variant="outline"
+                              className="text-emerald-600 border-emerald-600 flex items-center gap-1"
+                            >
+                              <GraduationCap className="h-3 w-3" />
+                              Training Provided
+                            </Badge>
+                          )}
+                        {job.category === 'deferred-hire' &&
+                          job.deferredStartMonths && (
+                            <Badge
+                              variant="outline"
+                              className="text-blue-600 border-blue-600 flex items-center gap-1"
+                            >
+                              <Calendar className="h-3 w-3" />
+                              Starts in {job.deferredStartMonths} months
+                            </Badge>
+                          )}
                       </div>
 
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
-                          Posted {formatDistanceToNow(new Date(job.postedAt), { addSuffix: true })}
+                          Posted{' '}
+                          {formatDistanceToNow(new Date(job.postedAt), {
+                            addSuffix: true,
+                          })}
                         </span>
                         <span className="flex items-center gap-1">
                           <Users className="h-4 w-4" />
@@ -271,7 +281,9 @@ export default function JobDetailPage() {
                 <CardContent>
                   <div className="prose prose-sm max-w-none">
                     {job.description ? (
-                      <div dangerouslySetInnerHTML={{ __html: job.description }} />
+                      <div
+                        dangerouslySetInnerHTML={{ __html: job.description }}
+                      />
                     ) : (
                       <p>No description available.</p>
                     )}
@@ -287,11 +299,13 @@ export default function JobDetailPage() {
                   </CardHeader>
                   <CardContent>
                     <ul className="list-disc list-inside space-y-2">
-                      {job.requirements.map((requirement: string, index: number) => (
-                        <li key={index} className="text-sm">
-                          {requirement}
-                        </li>
-                      ))}
+                      {job.requirements.map(
+                        (requirement: string, index: number) => (
+                          <li key={index} className="text-sm">
+                            {requirement}
+                          </li>
+                        )
+                      )}
                     </ul>
                   </CardContent>
                 </Card>
@@ -340,7 +354,9 @@ export default function JobDetailPage() {
                           <DollarSign className="h-6 w-6" />
                           {formatSalary(job.salary)}
                         </p>
-                        <p className="text-sm text-muted-foreground">per year</p>
+                        <p className="text-sm text-muted-foreground">
+                          per year
+                        </p>
                       </div>
 
                       <Separator />
@@ -369,7 +385,9 @@ export default function JobDetailPage() {
                             className="flex-1"
                             onClick={handleSaveJob}
                           >
-                            <Heart className={`h-4 w-4 mr-2 ${saved ? 'fill-current' : ''}`} />
+                            <Heart
+                              className={`h-4 w-4 mr-2 ${saved ? 'fill-current' : ''}`}
+                            />
                             {saved ? 'Saved' : 'Save'}
                           </Button>
                           <Button
@@ -394,20 +412,34 @@ export default function JobDetailPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Job Type</span>
-                      <span className="text-sm font-medium">{getJobTypeLabel(job.type)}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Job Type
+                      </span>
+                      <span className="text-sm font-medium">
+                        {getJobTypeLabel(job.type)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Experience Level</span>
-                      <span className="text-sm font-medium capitalize">{job.experienceLevel || 'Not specified'}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Experience Level
+                      </span>
+                      <span className="text-sm font-medium capitalize">
+                        {job.experienceLevel || 'Not specified'}
+                      </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm text-muted-foreground">Category</span>
-                      <span className="text-sm font-medium capitalize">{job.category}</span>
+                      <span className="text-sm text-muted-foreground">
+                        Category
+                      </span>
+                      <span className="text-sm font-medium capitalize">
+                        {job.category}
+                      </span>
                     </div>
                     {job.deadline && (
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Deadline</span>
+                        <span className="text-sm text-muted-foreground">
+                          Deadline
+                        </span>
                         <span className="text-sm font-medium">
                           {new Date(job.deadline).toLocaleDateString()}
                         </span>

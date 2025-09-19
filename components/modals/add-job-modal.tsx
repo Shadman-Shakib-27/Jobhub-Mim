@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -33,15 +33,18 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { jobsApi } from '@/lib/api/jobs';
 
-interface AddJobModalProps {
+interface PostJobModalProps {
   open: boolean;
   onClose: () => void;
+  onJobAdded?: () => void; // Callback when job is successfully added
 }
 
 interface JobFormData {
   title: string;
   company: string;
+  companyId: string;
   location: string;
   type: string;
   category: string;
@@ -59,7 +62,7 @@ interface JobFormData {
   deferredStartMonths: number | '';
 }
 
-export function AddJobModal({ open, onClose }: AddJobModalProps) {
+export function PostJobModal({ open, onClose, onJobAdded }: PostJobModalProps) {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [newRequirement, setNewRequirement] = useState('');
@@ -68,6 +71,7 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
   const [formData, setFormData] = useState<JobFormData>({
     title: '',
     company: '',
+    companyId: '',
     location: '',
     type: 'full-time',
     category: 'skilled',
@@ -169,8 +173,8 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
       setLoading(true);
 
       // Basic validation
-      if (!formData.title || !formData.company || !formData.location || !formData.description) {
-        toast.error('Please fill in all required fields');
+      if (!formData.title || !formData.company || !formData.companyId || !formData.location || !formData.description) {
+        toast.error('Please fill in all required fields including Company ID');
         return;
       }
 
@@ -179,17 +183,54 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
         return;
       }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Prepare job data for API
+      const jobData = {
+        ...formData,
+        salary: {
+          min: formData.salary.min || null,
+          max: formData.salary.max || null,
+          currency: formData.salary.currency
+        },
+        deferredStartMonths: formData.deferredStartMonths || null,
+      };
 
-      // Here you would make the actual API call
-      console.log('Submitting job:', formData);
+      console.log('Submitting job data:', jobData); // Debug log
 
+      // Call API to create job
+      const response = await jobsApi.createJob(jobData);
+      
+      console.log('Job created successfully:', response); // Debug log
       toast.success('Job posted successfully!');
+      
+      // Call the callback to refresh jobs list
+      if (onJobAdded) {
+        onJobAdded();
+      }
+      
       handleClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to create job:', error);
-      toast.error('Failed to create job. Please try again.');
+      
+      // More detailed error handling
+      let errorMessage = 'Failed to create job. ';
+      
+      if (error.response) {
+        // Server responded with error status
+        console.error('Server response:', error.response);
+        errorMessage += `Server error: ${error.response.status}`;
+        if (error.response.data?.message) {
+          errorMessage += ` - ${error.response.data.message}`;
+        }
+      } else if (error.request) {
+        // Network error
+        console.error('Network error:', error.request);
+        errorMessage += 'Network error. Please check your connection.';
+      } else {
+        // Other error
+        errorMessage += error.message || 'Unknown error occurred.';
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -199,6 +240,7 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
     setFormData({
       title: '',
       company: '',
+      companyId: '',
       location: '',
       type: 'full-time',
       category: 'skilled',
@@ -223,8 +265,8 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
 
   const nextStep = () => {
     if (currentStep === 1) {
-      if (!formData.title || !formData.company || !formData.location) {
-        toast.error('Please fill in all basic information');
+      if (!formData.title || !formData.company || !formData.companyId || !formData.location) {
+        toast.error('Please fill in all basic information including Company ID');
         return;
       }
     }
@@ -262,7 +304,7 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
           {[1, 2, 3].map(step => (
             <div
               key={step}
-              className={`flex-1 h-2 rounded-full ${
+              className={`flex-1 h-2 rounded-full ${ 
                 step <= currentStep ? 'bg-primary' : 'bg-muted'
               }`}
             />
@@ -292,6 +334,19 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
                     placeholder="e.g. TechCorp Inc."
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="companyId">Company ID *</Label>
+                <Input
+                  id="companyId"
+                  value={formData.companyId}
+                  onChange={(e) => handleInputChange('companyId', e.target.value)}
+                  placeholder="e.g. company-uuid-12345 or company ID from database"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter the company ID from your system (required for job posting)
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -572,6 +627,7 @@ export function AddJobModal({ open, onClose }: AddJobModalProps) {
                   <div className="space-y-2 text-sm">
                     <p><strong>Title:</strong> {formData.title || 'Not specified'}</p>
                     <p><strong>Company:</strong> {formData.company || 'Not specified'}</p>
+                    <p><strong>Company ID:</strong> {formData.companyId || 'Not specified'}</p>
                     <p><strong>Location:</strong> {formData.location || 'Not specified'}</p>
                     <p><strong>Type:</strong> {jobTypes.find(t => t.value === formData.type)?.label}</p>
                     <p><strong>Category:</strong> {jobCategories.find(c => c.value === formData.category)?.label}</p>
