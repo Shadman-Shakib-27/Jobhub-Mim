@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,28 +12,19 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/auth-context';
 import {
-  User,
-  Mail,
-  Phone,
-  MapPin,
   Briefcase,
   Calendar,
-  Edit,
-  Save,
-  X,
-  Camera
+  Camera,
+  Home,
+  Mail,
+  MapPin,
+  Phone,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function ProfilePage() {
   const { user } = useAuth();
@@ -70,9 +60,9 @@ export default function ProfilePage() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
@@ -81,7 +71,7 @@ export default function ProfilePage() {
     console.log('Saving profile data:', formData);
     setIsEditing(false);
   };
-
+  const router = useRouter();
   const handleCancel = () => {
     // Reset form data to original user data
     setFormData({
@@ -103,7 +93,9 @@ export default function ProfilePage() {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Please log in to view your profile</h1>
+          <h1 className="text-2xl font-bold mb-4">
+            Please log in to view your profile
+          </h1>
         </div>
       </div>
     );
@@ -114,7 +106,7 @@ export default function ProfilePage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">My Profile</h1>
-        {!isEditing ? (
+        {/* {!isEditing ? (
           <Button onClick={() => setIsEditing(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit Profile
@@ -130,7 +122,11 @@ export default function ProfilePage() {
               Cancel
             </Button>
           </div>
-        )}
+        )} */}
+        <Button onClick={() => router.push('/')} variant="outline">
+          <Home className="mr-2 h-4 w-4" />
+          Home
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -139,10 +135,7 @@ export default function ProfilePage() {
           <CardHeader className="text-center">
             <div className="relative mx-auto mb-4">
               <Avatar className="h-24 w-24">
-                <AvatarImage
-                  src={user.avatar}
-                  alt={getDisplayName()}
-                />
+                <AvatarImage src={user.avatar} alt={getDisplayName()} />
                 <AvatarFallback className="bg-primary/10 text-primary font-semibold text-lg">
                   {getUserInitials(formData.firstName, formData.lastName)}
                 </AvatarFallback>
@@ -158,12 +151,12 @@ export default function ProfilePage() {
               )}
             </div>
             <CardTitle className="text-xl">{getDisplayName()}</CardTitle>
-            <CardDescription className="flex items-center justify-center gap-1">
+            <CardDescription className="flex items-center mb-2 justify-center gap-1">
               <Mail className="h-4 w-4" />
               {formData.email}
             </CardDescription>
             {user.role && (
-              <Badge variant="secondary" className="mt-2">
+              <Badge variant="secondary" className="mt-4 mx-auto">
                 {user.role === 'seeker' ? 'Job Seeker' : 'Employer'}
               </Badge>
             )}
@@ -187,9 +180,9 @@ export default function ProfilePage() {
                 {formData.company}
               </div>
             )}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm -mt-4 lg:ml-4 ml-20 mx-auto text-muted-foreground">
               <Calendar className="h-4 w-4" />
-              Member since {new Date().getFullYear()}
+              Member Since {new Date().getFullYear()}
             </div>
           </CardContent>
         </Card>
@@ -212,11 +205,15 @@ export default function ProfilePage() {
                     <Input
                       id="firstName"
                       value={formData.firstName}
-                      onChange={(e) => handleInputChange('firstName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('firstName', e.target.value)
+                      }
                       placeholder="Enter your first name"
                     />
                   ) : (
-                    <div className="p-2 bg-muted rounded">{formData.firstName || 'Not provided'}</div>
+                    <div className="p-2 bg-muted rounded">
+                      {formData.firstName || 'Not provided'}
+                    </div>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -225,22 +222,26 @@ export default function ProfilePage() {
                     <Input
                       id="lastName"
                       value={formData.lastName}
-                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('lastName', e.target.value)
+                      }
                       placeholder="Enter your last name"
                     />
                   ) : (
-                    <div className="p-2 bg-muted rounded">{formData.lastName || 'Not provided'}</div>
+                    <div className="p-2 bg-muted rounded">
+                      {formData.lastName || 'Not provided'}
+                    </div>
                   )}
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <div className="p-2 bg-muted rounded text-muted-foreground">
                   {formData.email} (Cannot be changed)
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
@@ -248,11 +249,15 @@ export default function ProfilePage() {
                     <Input
                       id="phone"
                       value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('phone', e.target.value)
+                      }
                       placeholder="Enter your phone number"
                     />
                   ) : (
-                    <div className="p-2 bg-muted rounded">{formData.phone || 'Not provided'}</div>
+                    <div className="p-2 bg-muted rounded">
+                      {formData.phone || 'Not provided'}
+                    </div>
                   )}
                 </div>
                 <div className="space-y-2">
@@ -261,11 +266,15 @@ export default function ProfilePage() {
                     <Input
                       id="location"
                       value={formData.location}
-                      onChange={(e) => handleInputChange('location', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange('location', e.target.value)
+                      }
                       placeholder="Enter your location"
                     />
                   ) : (
-                    <div className="p-2 bg-muted rounded">{formData.location || 'Not provided'}</div>
+                    <div className="p-2 bg-muted rounded">
+                      {formData.location || 'Not provided'}
+                    </div>
                   )}
                 </div>
               </div>
@@ -273,7 +282,7 @@ export default function ProfilePage() {
           </Card>
 
           {/* Professional Information */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>Professional Information</CardTitle>
               <CardDescription>
@@ -338,10 +347,10 @@ export default function ProfilePage() {
                 )}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* About/Bio Section */}
-          <Card>
+          {/* <Card>
             <CardHeader>
               <CardTitle>About Me</CardTitle>
               <CardDescription>
@@ -366,7 +375,7 @@ export default function ProfilePage() {
                 )}
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Account Information */}
           <Card>
@@ -388,13 +397,18 @@ export default function ProfilePage() {
                 <div className="flex items-center justify-between py-2">
                   <span className="font-medium">Member Since:</span>
                   <span className="text-muted-foreground">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}
+                    {user.createdAt
+                      ? new Date(user.createdAt).toLocaleDateString()
+                      : new Date().toLocaleDateString()}
                   </span>
                 </div>
                 <Separator />
                 <div className="flex items-center justify-between py-2">
                   <span className="font-medium">Account Status:</span>
-                  <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Badge
+                    variant="outline"
+                    className="text-green-600 border-green-600"
+                  >
                     Active
                   </Badge>
                 </div>
