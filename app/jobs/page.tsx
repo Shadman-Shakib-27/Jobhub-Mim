@@ -14,6 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/contexts/auth-context';
+
 import {
   Select,
   SelectContent,
@@ -48,6 +50,7 @@ import { toast } from 'sonner';
 // Add Job Modal Component
 function AddJobModal({ open, onClose, onJobAdded }) {
   const [loading, setLoading] = useState(false);
+  const { user, logout } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [newRequirement, setNewRequirement] = useState('');
   const [newBenefit, setNewBenefit] = useState('');
@@ -759,6 +762,7 @@ function AddJobModal({ open, onClose, onJobAdded }) {
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
+  const { user, logout } = useAuth();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -1438,11 +1442,13 @@ export default function JobsPage() {
       />
 
       {/* Add Job Modal */}
-      <AddJobModal
-        open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        onJobAdded={handleJobAdded}
-      />
+      {user?.role === 'employer' && (
+        <AddJobModal
+          open={addModalOpen}
+          onClose={() => setAddModalOpen(false)}
+          onJobAdded={handleJobAdded}
+        />
+      )}
     </div>
   );
 }
