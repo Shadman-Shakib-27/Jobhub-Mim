@@ -1,41 +1,61 @@
 'use client';
 
-import { useState } from 'react';
-import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/auth-context';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Briefcase, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation'; // Next.js 13+ App Router
+// import { useRouter } from 'next/router'; // Next.js Pages Router এর জন্য
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-const registerSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-  role: z.enum(['seeker', 'employer'], {
-    required_error: 'Please select your role',
-  }),
-  companyName: z.string().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-}).refine((data) => {
-  if (data.role === 'employer' && !data.companyName?.trim()) {
-    return false;
-  }
-  return true;
-}, {
-  message: "Company name is required for employers",
-  path: ["companyName"],
-});
+const registerSchema = z
+  .object({
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
+    email: z.string().email('Please enter a valid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string(),
+    role: z.enum(['seeker', 'employer'], {
+      required_error: 'Please select your role',
+    }),
+    companyName: z.string().optional(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  })
+  .refine(
+    (data) => {
+      if (data.role === 'employer' && !data.companyName?.trim()) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: 'Company name is required for employers',
+      path: ['companyName'],
+    }
+  );
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
@@ -43,6 +63,7 @@ export default function RegisterPage() {
   const { register: registerUser, isLoading } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const router = useRouter();
 
   const {
     register,
@@ -58,7 +79,14 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: RegisterForm) => {
     const { confirmPassword, ...registerData } = data;
-    await registerUser(registerData);
+    const success = await registerUser(registerData);
+
+    // registerUser function ইতিমধ্যে redirect handle করছে
+    // তাই এখানে আলাদা redirect এর প্রয়োজন নেই
+    if (success) {
+      // Optional: কোন additional logic যদি থাকে
+      console.log('Registration successful');
+    }
   };
 
   return (
@@ -85,10 +113,12 @@ export default function RegisterPage() {
                   className={errors.firstName ? 'border-destructive' : ''}
                 />
                 {errors.firstName && (
-                  <p className="text-sm text-destructive">{errors.firstName.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.firstName.message}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input
@@ -98,7 +128,9 @@ export default function RegisterPage() {
                   className={errors.lastName ? 'border-destructive' : ''}
                 />
                 {errors.lastName && (
-                  <p className="text-sm text-destructive">{errors.lastName.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.lastName.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -113,7 +145,9 @@ export default function RegisterPage() {
                 className={errors.email ? 'border-destructive' : ''}
               />
               {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.email.message}
+                </p>
               )}
             </div>
 
@@ -124,7 +158,9 @@ export default function RegisterPage() {
                 control={control}
                 render={({ field }) => (
                   <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className={errors.role ? 'border-destructive' : ''}>
+                    <SelectTrigger
+                      className={errors.role ? 'border-destructive' : ''}
+                    >
                       <SelectValue placeholder="Select your role" />
                     </SelectTrigger>
                     <SelectContent>
@@ -135,7 +171,9 @@ export default function RegisterPage() {
                 )}
               />
               {errors.role && (
-                <p className="text-sm text-destructive">{errors.role.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.role.message}
+                </p>
               )}
             </div>
 
@@ -149,7 +187,9 @@ export default function RegisterPage() {
                   className={errors.companyName ? 'border-destructive' : ''}
                 />
                 {errors.companyName && (
-                  <p className="text-sm text-destructive">{errors.companyName.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.companyName.message}
+                  </p>
                 )}
               </div>
             )}
@@ -162,7 +202,9 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   {...register('password')}
-                  className={errors.password ? 'border-destructive pr-10' : 'pr-10'}
+                  className={
+                    errors.password ? 'border-destructive pr-10' : 'pr-10'
+                  }
                 />
                 <Button
                   type="button"
@@ -179,7 +221,9 @@ export default function RegisterPage() {
                 </Button>
               </div>
               {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.password.message}
+                </p>
               )}
             </div>
 
@@ -191,7 +235,11 @@ export default function RegisterPage() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   {...register('confirmPassword')}
-                  className={errors.confirmPassword ? 'border-destructive pr-10' : 'pr-10'}
+                  className={
+                    errors.confirmPassword
+                      ? 'border-destructive pr-10'
+                      : 'pr-10'
+                  }
                 />
                 <Button
                   type="button"
@@ -208,7 +256,9 @@ export default function RegisterPage() {
                 </Button>
               </div>
               {errors.confirmPassword && (
-                <p className="text-sm text-destructive">{errors.confirmPassword.message}</p>
+                <p className="text-sm text-destructive">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
 

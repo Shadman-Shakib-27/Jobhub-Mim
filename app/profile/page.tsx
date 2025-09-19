@@ -80,7 +80,6 @@ export default function ProfilePage() {
     // Here you would typically make an API call to update user data
     console.log('Saving profile data:', formData);
     setIsEditing(false);
-    // You can add actual save functionality here
   };
 
   const handleCancel = () => {

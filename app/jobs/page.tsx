@@ -942,9 +942,6 @@ export default function JobsPage() {
                 {job?.company} • {job?.location}
               </DialogDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
@@ -1040,14 +1037,14 @@ export default function JobsPage() {
           )}
 
           {/* Apply Button */}
-          <div className="flex gap-4 pt-4">
+          {/* <div className="flex gap-4 pt-4">
             <Button size="lg" className="flex-1">
               Apply Now
             </Button>
             <Button variant="outline" size="lg">
               Save Job
             </Button>
-          </div>
+          </div> */}
         </div>
       </DialogContent>
     </Dialog>
