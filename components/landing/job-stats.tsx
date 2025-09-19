@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 
 const stats = [
-  { label: 'Active Jobs', value: 12500, suffix: '+' },
-  { label: 'Companies', value: 2800, suffix: '+' },
-  { label: 'Job Seekers', value: 45000, suffix: '+' },
-  { label: 'Success Rate', value: 87, suffix: '%' }
+  { label: 'Active Jobs', value: 100, suffix: '+' },
+  { label: 'Companies', value: 20, suffix: '+' },
+  { label: 'Job Seekers', value: 4000, suffix: '+' },
+  { label: 'Success Rate', value: 75, suffix: '%' }
 ];
 
 export function JobStats() {
