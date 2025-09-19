@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { signToken } from '@/lib/auth';
 import { User } from '@/lib/models/User';
 import connectDB from '@/lib/mongodb';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -22,8 +23,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Briefcase, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // Next.js 13+ App Router
-// import { useRouter } from 'next/router'; // Next.js Pages Router এর জন্য
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';

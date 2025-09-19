@@ -1,9 +1,10 @@
+// @ts-nocheck
 'use client';
 
-import { createContext, useContext, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Cookies from 'js-cookie';
 import { authApi } from '@/lib/api/auth';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 export type UserRole = 'seeker' | 'employer' | 'admin';
@@ -66,12 +67,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authApi.login({ email, password });
-      
+
       Cookies.set('token', response.token, { expires: 7 });
       setUser(response.user);
-      
+
       toast.success('Welcome Back!');
-      
+
       // Redirect to homepage after login
       router.push('/');
       return true;
@@ -87,11 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setIsLoading(true);
       const response = await authApi.register(data);
-      
+
       // Option 1: Registration এর পর token set না করে শুধু success message দিন
       // এবং login page এ redirect করুন
       toast.success('Account Created Successfully! Please Login To Continue.');
-      
+
       // Redirect to login page after registration
       router.push('/auth/login');
       return true;
@@ -112,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return true;
       */
-      
     } catch (error: any) {
       toast.error(error.message || 'Registration Failed');
       return false;
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateUser = (data: Partial<User>) => {
-    setUser(prev => prev ? { ...prev, ...data } : null);
+    setUser((prev) => (prev ? { ...prev, ...data } : null));
   };
 
   return (

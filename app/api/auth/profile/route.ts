@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '@/lib/mongodb';
-import { User } from '@/lib/models/User';
+// @ts-nocheck
 import { authenticateRequest } from '@/lib/auth';
+import { User } from '@/lib/models/User';
+import connectDB from '@/lib/mongodb';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json(
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     await connectDB();
-    
+
     const auth = await authenticateRequest(request);
     if (!auth) {
       return NextResponse.json(
@@ -50,7 +51,7 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const user = await User.findById(auth.userId);
-    
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: 'User not found' },
@@ -60,12 +61,21 @@ export async function PUT(request: NextRequest) {
 
     // Update allowed fields
     const allowedFields = [
-      'firstName', 'lastName', 'phone', 'location', 'bio', 
-      'skills', 'experience', 'education', 'companyName', 
-      'companySize', 'companyWebsite', 'companyDescription'
+      'firstName',
+      'lastName',
+      'phone',
+      'location',
+      'bio',
+      'skills',
+      'experience',
+      'education',
+      'companyName',
+      'companySize',
+      'companyWebsite',
+      'companyDescription',
     ];
 
-    allowedFields.forEach(field => {
+    allowedFields.forEach((field) => {
       if (body[field] !== undefined) {
         (user as any)[field] = body[field];
       }

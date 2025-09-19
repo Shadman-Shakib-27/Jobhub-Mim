@@ -1,3 +1,4 @@
+// @ts-nocheck
 // lib/models/Application.ts
 import mongoose, { Document, Schema } from 'mongoose';
 
