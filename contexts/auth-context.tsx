@@ -89,30 +89,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       const response = await authApi.register(data);
 
-      // Option 1: Registration এর পর token set না করে শুধু success message দিন
-      // এবং login page এ redirect করুন
+      // Option 1: 
       toast.success('Account Created Successfully! Please Login To Continue.');
 
       // Redirect to login page after registration
       router.push('/auth/login');
       return true;
 
-      /* Option 2: যদি registration এর পর automatic login করতে চান
-      Cookies.set('token', response.token, { expires: 7 });
-      setUser(response.user);
-      
-      toast.success('Welcome! Your account has been created successfully.');
-      
-      // Role based redirect
-      if (response.user.role === 'employer') {
-        router.push('/employer/dashboard');
-      } else if (response.user.role === 'seeker') {
-        router.push('/seeker/dashboard');
-      } else {
-        router.push('/');
-      }
-      return true;
-      */
+    
     } catch (error: any) {
       toast.error(error.message || 'Registration Failed');
       return false;
