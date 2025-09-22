@@ -1,6 +1,5 @@
 // @ts-nocheck
 'use client';
-
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { Badge } from '@/components/ui/badge';
@@ -15,8 +14,27 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useAuth } from '@/contexts/auth-context';
+import { formatDistanceToNow } from 'date-fns';
+import {
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Filter,
+  Lock,
+  Settings,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
+import { EnhancedJobDetailsModal } from '@/components/enhanced-job-details-modal';
 import {
   Select,
   SelectContent,
@@ -27,16 +45,10 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { JobFilters, jobsApi } from '@/lib/api/jobs';
-import { formatDistanceToNow } from 'date-fns';
 import {
   Briefcase,
-  Building,
   Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
   DollarSign,
-  Filter,
   GraduationCap,
   Loader2,
   MapPin,
@@ -46,12 +58,11 @@ import {
 } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
 
 // Add Job Modal Component
 function AddJobModal({ open, onClose, onJobAdded }) {
   const [loading, setLoading] = useState(false);
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [newRequirement, setNewRequirement] = useState('');
   const [newBenefit, setNewBenefit] = useState('');
@@ -160,7 +171,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
     try {
       setLoading(true);
 
-      // Basic validation
       if (
         !formData.title ||
         !formData.company ||
@@ -181,7 +191,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
         return;
       }
 
-      // Prepare job data for API
       const jobData = {
         ...formData,
         salary: {
@@ -192,38 +201,13 @@ function AddJobModal({ open, onClose, onJobAdded }) {
         deferredStartMonths: formData.deferredStartMonths || null,
       };
 
-      console.log('Submitting job data:', jobData); // Debug log
-
-      // Call API to create job
       const response = await jobsApi.createJob(jobData);
-
-      console.log('Job created successfully:', response); // Debug log
       toast.success('Job posted successfully!');
-      onJobAdded(); // Refresh the jobs list
+      onJobAdded();
       handleClose();
     } catch (error) {
       console.error('Failed to create job:', error);
-
-      // More detailed error handling
-      let errorMessage = 'Failed to create job. ';
-
-      if (error.response) {
-        // Server responded with error status
-        console.error('Server response:', error.response);
-        errorMessage += `Server error: ${error.response.status}`;
-        if (error.response.data?.message) {
-          errorMessage += ` - ${error.response.data.message}`;
-        }
-      } else if (error.request) {
-        // Network error
-        console.error('Network error:', error.request);
-        errorMessage += 'Network error. Please check your connection.';
-      } else {
-        // Other error
-        errorMessage += error.message || 'Unknown error occurred.';
-      }
-
-      toast.error(errorMessage);
+      toast.error('Failed to create job. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -304,7 +288,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
           </DialogDescription>
         </DialogHeader>
 
-        {/* Progress Indicator */}
         <div className="flex items-center gap-2 mb-6">
           {[1, 2, 3].map((step) => (
             <div
@@ -317,7 +300,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
         </div>
 
         <div className="space-y-6">
-          {/* Step 1: Basic Information */}
           {currentStep === 1 && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -438,22 +420,19 @@ function AddJobModal({ open, onClose, onJobAdded }) {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="isRemote"
-                    checked={formData.isRemote}
-                    onCheckedChange={(checked) =>
-                      handleInputChange('isRemote', checked)
-                    }
-                  />
-                  <Label htmlFor="isRemote">Remote Work Available</Label>
-                </div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isRemote"
+                  checked={formData.isRemote}
+                  onCheckedChange={(checked) =>
+                    handleInputChange('isRemote', checked)
+                  }
+                />
+                <Label htmlFor="isRemote">Remote Work Available</Label>
               </div>
             </div>
           )}
 
-          {/* Step 2: Job Details */}
           {currentStep === 2 && (
             <div className="space-y-4">
               <div className="space-y-2">
@@ -536,7 +515,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
                 </div>
               </div>
 
-              {/* Category-specific options */}
               {formData.category === 'non-skilled' && (
                 <div className="flex items-center space-x-2">
                   <Switch
@@ -584,7 +562,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
             </div>
           )}
 
-          {/* Step 3: Requirements & Benefits */}
           {currentStep === 3 && (
             <div className="space-y-6">
               <div className="space-y-4">
@@ -667,7 +644,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
                 </div>
               </div>
 
-              {/* Job Preview */}
               <Card className="mt-6">
                 <CardContent className="p-4">
                   <h3 className="font-semibold mb-4 text-lg">Job Preview</h3>
@@ -721,7 +697,6 @@ function AddJobModal({ open, onClose, onJobAdded }) {
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex justify-between pt-6">
             <div className="flex gap-2">
               {currentStep > 1 && (
@@ -763,7 +738,8 @@ function AddJobModal({ open, onClose, onJobAdded }) {
 
 export default function JobsPage() {
   const searchParams = useSearchParams();
-  const { user, logout } = useAuth();
+  const router = useRouter();
+  const { user } = useAuth();
   const [jobs, setJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedJob, setSelectedJob] = useState<any>(null);
@@ -823,9 +799,7 @@ export default function JobsPage() {
     try {
       setLoading(true);
       const filtersToUse = newFilters || filters;
-
       const response = await jobsApi.getJobs(filtersToUse);
-
       setJobs(response.jobs);
       setPagination(response.pagination);
     } catch (error: any) {
@@ -837,43 +811,35 @@ export default function JobsPage() {
     }
   };
 
-  // Initial load
   useEffect(() => {
     loadJobs();
   }, []);
 
-  // Handle search
   const handleSearch = () => {
     const newFilters = { ...filters, page: 1 };
     setFilters(newFilters);
     loadJobs(newFilters);
   };
 
-  // Handle filter change
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value, page: 1 };
     setFilters(newFilters);
     loadJobs(newFilters);
   };
 
-  // Handle sort change
   const handleSortChange = (value: string) => {
     const newFilters = { ...filters, sortBy: value, page: 1 };
     setFilters(newFilters);
     loadJobs(newFilters);
   };
 
-  // Handle pagination
   const handlePageChange = (newPage: number) => {
     const newFilters = { ...filters, page: newPage };
     setFilters(newFilters);
     loadJobs(newFilters);
-
-    // Scroll to top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Clear filters
   const clearFilters = () => {
     const newFilters = {
       search: '',
@@ -899,158 +865,111 @@ export default function JobsPage() {
     return `${formatter.format(salary.min)} - ${formatter.format(salary.max)}`;
   };
 
-  // Handle job click to open modal
   const handleJobClick = (job: any) => {
     setSelectedJob(job);
     setModalOpen(true);
   };
 
-  // Handle job added - refresh the list
   const handleJobAdded = () => {
-    loadJobs(); // Reload jobs from database
+    loadJobs();
   };
 
-  // Simple Job Details Modal Component
-  const JobDetailsModal = ({
-    job,
-    open,
-    onClose,
-  }: {
-    job: any;
-    open: boolean;
-    onClose: () => void;
-  }) => (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start gap-4">
-            <div className="w-16 h-16 rounded-lg bg-primary/10 flex items-center justify-center border">
-              {job?.companyLogo ? (
-                <img
-                  src={job.companyLogo}
-                  alt={`${job.company} logo`}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-              ) : (
-                <Building className="h-8 w-8 text-primary" />
-              )}
-            </div>
-            <div className="flex-1">
-              <DialogTitle className="text-2xl font-bold mb-2">
-                {job?.title}
-              </DialogTitle>
-              <DialogDescription className="text-lg">
-                {job?.company} • {job?.location}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
+  // Role-based Post Job Button Handler
+  const handlePostJob = () => {
+    if (!user) {
+      toast.error('Please login to post a job', {
+        action: {
+          label: 'Login',
+          onClick: () => router.push('/auth/login'),
+        },
+      });
+      return;
+    }
 
-        <div className="space-y-6 mt-6">
-          {/* Job Badges */}
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {job?.location}
-            </Badge>
-            <Badge variant="outline">
-              {jobTypes.find((t) => t.value === job?.type)?.label}
-            </Badge>
-            {job?.category === 'non-skilled' && job?.trainingProvided && (
-              <Badge
-                variant="outline"
-                className="text-emerald-600 border-emerald-600 flex items-center gap-1"
-              >
-                <GraduationCap className="h-3 w-3" />
-                Training Provided
-              </Badge>
-            )}
-            {job?.category === 'deferred-hire' && job?.deferredStartMonths && (
-              <Badge
-                variant="outline"
-                className="text-blue-600 border-blue-600 flex items-center gap-1"
-              >
-                <Calendar className="h-3 w-3" />
-                Starts in {job.deferredStartMonths} months
-              </Badge>
-            )}
-            {job?.isRemote && (
-              <Badge
-                variant="outline"
-                className="text-green-600 border-green-600"
-              >
-                Remote
-              </Badge>
-            )}
-          </div>
+    if (user.role === 'seeker') {
+      toast.error('Only employers can post jobs', {
+        description:
+          'Switch to an employer account or create a new employer account.',
+        // action: {
+        //   label: 'Create Employer Account',
+        //   onClick: () => router.push('/auth/register'),
+        // },
+      });
+      return;
+    }
 
-          {/* Salary */}
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-green-600" />
-            <span className="text-lg font-semibold text-green-600">
-              {formatSalary(job?.salary)}
-            </span>
-          </div>
+    if (user.role === 'admin') {
+      toast.info('Admins cannot post jobs directly', {
+        description: 'Use the admin panel to manage job postings.',
+        action: {
+          label: 'Admin Panel',
+          onClick: () => router.push('/admin'),
+        },
+      });
+      return;
+    }
 
-          {/* Posted Date */}
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>
-              Posted{' '}
-              {job?.postedAt
-                ? formatDistanceToNow(new Date(job.postedAt), {
-                    addSuffix: true,
-                  })
-                : 'recently'}
-            </span>
-          </div>
+    setAddModalOpen(true);
+  };
 
-          {/* Job Description */}
-          <div>
-            <h3 className="text-lg font-semibold mb-3">Job Description</h3>
-            <div className="text-muted-foreground whitespace-pre-line">
-              {job?.description || 'No description available.'}
-            </div>
-          </div>
+  // Get button configuration based on user role
+  const getPostJobButtonConfig = () => {
+    if (!user) {
+      return {
+        disabled: false,
+        variant: 'default' as const,
+        text: 'Post a Job',
+        icon: Plus,
+        // tooltip: 'Login required to post jobs',
+        className: '',
+      };
+    }
 
-          {/* Requirements */}
-          {job?.requirements && job.requirements.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Requirements</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                {job.requirements.map((req: string, index: number) => (
-                  <li key={index}>{req}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+    switch (user.role) {
+      case 'seeker':
+        return {
+          disabled: false,
+          variant: 'default' as const,
+          text: 'Only Employers Can Post Jobs',
+          icon: Lock,
+          // tooltip:
+          //   'Only employers can post jobs. Switch to an employer account.',
+          className: 'opacity-60',
+        };
+      case 'admin':
+        return {
+          disabled: false,
+          variant: 'outline' as const,
+          text: 'Use Admin Panel',
+          icon: Settings,
+          // tooltip: 'Admins should use the admin panel to manage jobs',
+          className: '',
+        };
+      case 'employer':
+        return {
+          disabled: false,
+          variant: 'default' as const,
+          text: 'Post a Job',
+          icon: Plus,
+          // tooltip: 'Create a new job posting',
+          className: 'hover:scale-105',
+        };
+      default:
+        return {
+          disabled: false,
+          variant: 'default' as const,
+          text: 'Post a Job',
+          icon: Plus,
+          // tooltip: 'Post a new job',
+          className: '',
+        };
+    }
+  };
 
-          {/* Benefits */}
-          {job?.benefits && job.benefits.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold mb-3">Benefits</h3>
-              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                {job.benefits.map((benefit: string, index: number) => (
-                  <li key={index}>{benefit}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+  const buttonConfig = getPostJobButtonConfig();
+  const IconComponent = buttonConfig.icon;
 
-          {/* Apply Button */}
-          {/* <div className="flex gap-4 pt-4">
-            <Button size="lg" className="flex-1">
-              Apply Now
-            </Button>
-            <Button variant="outline" size="lg">
-              Save Job
-            </Button>
-          </div> */}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
+  // Job Card Component
   const JobCard = ({ job }: { job: any }) => (
     <Card
       className="hover:shadow-md transition-shadow cursor-pointer group"
@@ -1146,6 +1065,7 @@ export default function JobsPage() {
     </Card>
   );
 
+  // Pagination Component
   const Pagination = () => (
     <div className="flex items-center justify-between mt-8">
       <p className="text-sm text-muted-foreground">
@@ -1204,17 +1124,26 @@ export default function JobsPage() {
 
       <main className="flex-1 py-8">
         <div className="container max-w-6xl mx-auto px-4">
-          {/* Search Header with Post Job Button */}
+          {/* Search Header with Role-Based Post Job Button */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-3xl font-bold">Find Your Perfect Job</h1>
-              <Button
-                onClick={() => setAddModalOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Post a Job
-              </Button>
+              <h1 className="text-xl lg:text-3xl font-bold">
+                Find Your Perfect Job
+              </h1>
+
+              {/* Role-Based Post Job Button */}
+                    <Button
+                      onClick={handlePostJob}
+                      disabled={buttonConfig.disabled}
+                      variant={buttonConfig.variant}
+                      className={`flex items-center gap-2 transition-all duration-200 ${buttonConfig.className}`}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      {buttonConfig.text}
+                      {user?.role === 'seeker' && (
+                        <Lock className="h-3 w-3 ml-1 opacity-60" />
+                      )}
+                    </Button>
             </div>
 
             <Card className="p-6">
@@ -1430,7 +1359,7 @@ export default function JobsPage() {
       <Footer />
 
       {/* Job Details Modal */}
-      <JobDetailsModal
+      <EnhancedJobDetailsModal
         job={selectedJob}
         open={modalOpen}
         onClose={() => {
@@ -1439,7 +1368,7 @@ export default function JobsPage() {
         }}
       />
 
-      {/* Add Job Modal */}
+      {/* Conditional Add Job Modal - Only render for employers */}
       {user?.role === 'employer' && (
         <AddJobModal
           open={addModalOpen}

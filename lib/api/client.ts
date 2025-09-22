@@ -10,26 +10,56 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
+  private getAuthToken(): string | null {
+    // Try multiple ways to get token
+    const cookieToken = Cookies.get('token');
+    
+    if (cookieToken) {
+      return cookieToken;
+    }
+    
+    // Fallback: check localStorage (for debugging)
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    
+    return null;
+  }
+
   private async request<T>(
     endpoint: string, 
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Get token from cookies
-    const token = Cookies.get('token');
+    // Get token with better error handling
+    const token = this.getAuthToken();
     
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
+        // Add cache control for fresh data
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
         ...options.headers,
       },
+      // Disable caching for API calls
+      cache: 'no-store',
       ...options,
     };
 
     try {
+      console.log(`API Request: ${options.method || 'GET'} ${url}`);
+      if (token) {
+        console.log('Token present:', token.substring(0, 10) + '...');
+      } else {
+        console.warn('No token found for API request');
+      }
+
       const response = await fetch(url, config);
+
+      console.log(`API Response: ${response.status} ${response.statusText}`);
 
       if (!response.ok) {
         let errorMessage = 'Request failed';
@@ -41,13 +71,20 @@ class ApiClient {
           errorMessage = `HTTP ${response.status}: ${response.statusText}`;
         }
         
+        // Don't throw on 401 - let auth context handle it
+        if (response.status === 401) {
+          console.warn('Unauthorized request - token may be invalid');
+        }
+        
         throw new Error(errorMessage);
       }
 
       // Handle empty responses
       const contentType = response.headers.get('content-type');
       if (contentType && contentType.includes('application/json')) {
-        return await response.json();
+        const data = await response.json();
+        console.log('API Response Data:', data);
+        return data;
       } else {
         return {} as T;
       }

@@ -12,7 +12,7 @@ export interface JWTPayload {
 }
 
 export function signToken(payload: { userId: string; role: string }): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '70d' });
 }
 
 export function verifyToken(token: string): JWTPayload {

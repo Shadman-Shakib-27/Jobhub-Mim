@@ -12,11 +12,7 @@ A comprehensive job portal application built with the MERN stack, featuring role
   - Skilled positions
   - Non-skilled jobs with training provided
   - Deferred-hire positions (start after 3-6 months)
-- **Application Tracking**: Complete application lifecycle management
-- **Real-time Chat**: Direct communication between employers and job seekers
-- **File Upload**: Resume and company logo upload with cloud storage
-- **Email Notifications**: Application updates and important notifications
-- **Admin Panel**: User moderation, analytics, and system management
+
 
 ### Technical Features
 

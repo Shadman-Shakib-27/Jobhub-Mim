@@ -1,4 +1,5 @@
-// @ts-nocheck
+//@ts-nocheck
+// @/contexts/auth-context.tsx
 'use client';
 
 import { authApi } from '@/lib/api/auth';
@@ -43,37 +44,107 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
 
+  // Improved auth check with better error handling
   useEffect(() => {
     const checkAuth = async () => {
-      const token = Cookies.get('token');
-      if (token) {
-        try {
-          const userData = await authApi.getProfile();
-          setUser(userData);
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          Cookies.remove('token');
+      try {
+        setIsLoading(true);
+
+        const token = Cookies.get('token');
+
+        if (!token) {
+          setIsLoading(false);
+          setAuthChecked(true);
+          return;
         }
+
+        // Verify token with server
+        const userData = await authApi.getProfile();
+
+        if (userData) {
+          setUser(userData);
+          // Refresh token with better settings
+          Cookies.set('token', token, {
+            expires: 70,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            path: '/',
+          });
+        } else {
+          // Invalid token, remove it
+          Cookies.remove('token', { path: '/' });
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        // Don't immediately remove token on network error
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+
+        // Only remove token if it's actually invalid (401/403)
+        if (
+          errorMessage.includes('401') ||
+          errorMessage.includes('403') ||
+          errorMessage.includes('Unauthorized')
+        ) {
+          Cookies.remove('token', { path: '/' });
+          setUser(null);
+        }
+        // For network errors, keep the token and user state
+      } finally {
+        setIsLoading(false);
+        setAuthChecked(true);
       }
-      setIsLoading(false);
     };
 
-    checkAuth();
-  }, []);
+    if (!authChecked) {
+      checkAuth();
+    }
+  }, [authChecked]);
+
+  // Periodic token validation (every 5 minutes)
+  useEffect(() => {
+    if (!user) return;
+
+    const validateToken = async () => {
+      try {
+        await authApi.getProfile();
+      } catch (error) {
+        console.error('Token validation failed:', error);
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+
+        if (
+          errorMessage.includes('401') ||
+          errorMessage.includes('403') ||
+          errorMessage.includes('Unauthorized')
+        ) {
+          logout();
+        }
+      }
+    };
+
+    const interval = setInterval(validateToken, 5 * 60 * 1000); // 5 minutes
+    return () => clearInterval(interval);
+  }, [user]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       const response = await authApi.login({ email, password });
 
-      Cookies.set('token', response.token, { expires: 7 });
+      // Set cookie with improved settings
+      Cookies.set('token', response.token, {
+        expires: 7,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+      });
+
       setUser(response.user);
-
       toast.success('Welcome Back!');
-
-      // Redirect to homepage after login
       router.push('/');
       return true;
     } catch (error: any) {
@@ -89,14 +160,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
       const response = await authApi.register(data);
 
-      // Option 1: 
       toast.success('Account Created Successfully! Please Login To Continue.');
-
-      // Redirect to login page after registration
       router.push('/auth/login');
       return true;
-
-    
     } catch (error: any) {
       toast.error(error.message || 'Registration Failed');
       return false;
@@ -106,8 +172,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    Cookies.remove('token');
+    Cookies.remove('token', { path: '/' });
     setUser(null);
+    setAuthChecked(false);
     router.push('/');
     toast.success('Logged Out Successfully');
   };
